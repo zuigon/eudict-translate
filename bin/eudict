@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'mechanize'
+require 'hpricot'
+require 'terminal-table/import'
+
+usage = [ "Usage: #{File.basename(__FILE__)} [src lang] [dest lang] [text]",
+          " example: #{File.basename(__FILE__)} eng cro ruby" ].join("\n")
+
+def translate from, to, text
+  stats_url = "http://www.eudict.com/indexHr.php?word=#{CGI.escape text}&lang=#{from}#{to}"
+  agent = Mechanize.new
+  agent.user_agent_alias = 'Mac Safari'
+  page = agent.get(stats_url)
+  page = agent.get_file(stats_url)
+  doc = Hpricot(page)
+
+  rows = doc.search("//div[@id='content']/table/tr/td")
+  2.times { rows.delete rows.first }
+  3.times { rows.delete rows.last }
+  x=0; @table_rows=[]; temp=[]
+  if rows.empty?
+    puts "No result from EUdict ..."
+    exit
+  end
+  rows.each do |row|
+    if x%2==0
+      temp = [row.inner_text]
+    else
+      temp << row.inner_text
+      @table_rows << temp
+    end
+    x+=1
+  end
+  @table_rows
+  tbl = table do |t|
+    t.headings = from, to
+    @table_rows.each { |r| t<<r }
+  end
+  puts tbl
+end
+
+if ARGV[0]
+  from = ARGV[0]
+  if ARGV[1]
+    to = ARGV[1]
+    if !ARGV[2]
+      puts "Nothing to translate..."
+      puts
+      puts usage
+      exit
+    end
+    if ARGV[3]
+      puts usage
+      exit
+    end
+    text = ARGV[2]
+    translate from, to, text
+    puts "** this information was gathered from: http://www.eudict.com/ **"
+  else
+    puts usage
+  end
+else
+  puts usage
+end

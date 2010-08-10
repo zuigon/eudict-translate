@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require File.expand_path(File.dirname(__FILE__) + "/../lib/eudict-gem")
+require "eudict/cli"
+
+Eudict::CLI.execute(STDOUT, ARGV)
